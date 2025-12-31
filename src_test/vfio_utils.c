@@ -107,7 +107,6 @@ void init_vfio_dev_spec(struct vfio_dev_spec *dev)
 int is_group_viable(struct vfio_info *info)
 {
 	ioctl(info->group, VFIO_GROUP_GET_STATUS, &info->group_status);
-
 	return info->group_status.flags & VFIO_GROUP_FLAGS_VIABLE;
 }
 

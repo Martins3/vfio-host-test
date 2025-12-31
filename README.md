@@ -54,3 +54,40 @@ Num irqs: 5
         flags: 0x9
         count: 1
 ```
+## 需要理解的问题
+1. flags 都是什么意思
+2. region #7 是什么意思
+3. Num irq 和队列数量对应的吗?
+4. Num regions 就是 BAR 的数量吗?
+
+## 需要看看的代码细节
+1. VFIO_GROUP_FLAGS_VIABLE
+
+## 优化
+这个可以自动获取?
+```c
+
+	/* Open the group */
+	chr_group = g_strdup_printf("%i", dev.iommu_group);
+	group_addr = g_strdup_printf("%s%s", vfio_base, chr_group);
+	dev_vfio_info.group = open(group_addr, O_RDWR);
+```
+
+VFIO_GROUP_SET_CONTAINER
+
+
+```c
+	if (set_group_to_container(&dev_vfio_info) ||
+	    set_iommu_type(&dev_vfio_info)) {
+		printf("something went wrong\n");
+
+		goto error;
+	}
+```
+
+```txt
+int set_group_to_container(struct vfio_info *info)
+{
+	return ioctl(info->group, VFIO_GROUP_SET_CONTAINER, &info->container);
+}
+```
