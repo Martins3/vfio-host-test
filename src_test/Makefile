@@ -4,7 +4,7 @@
 # top-level directory.
 #
 CC=gcc
-CFLAGS = -I.
+CFLAGS = -I. -g
 GFLAGS = `pkg-config --cflags glib-2.0`
 GLIBS = `pkg-config --libs glib-2.0`
 DEPS = vfio_utils.h

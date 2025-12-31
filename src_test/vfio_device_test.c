@@ -5,17 +5,24 @@
  */
 #include "vfio_utils.h"
 
+#include <sys/fcntl.h>
+#include <sys/stat.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 static int parse_arguments(int argc, const char **arguments,
-			    struct vfio_dev_spec *dev, bool *test_irq)
+			   struct vfio_dev_spec *dev, bool *test_irq)
 {
 	int i, iommu_group;
 	char *dev_name, *err, *dev_bus;
 
 	if (argc != 5) {
 		printf("Usage: %s device_name iommu_group test_irq bus_name\n",
-								arguments[0]);
+		       arguments[0]);
 		printf("	example: %s 2c0a0000.dma 0 1 amba\n",
-								arguments[0]);
+		       arguments[0]);
 
 		goto error;
 	}
@@ -35,7 +42,7 @@ static int parse_arguments(int argc, const char **arguments,
 	}
 
 	dev_name = g_strdup(arguments[1]);
-	dev_bus  = g_strdup(arguments[4]);
+	dev_bus = g_strdup(arguments[4]);
 
 	dev->name = dev_name;
 	dev->iommu_group = iommu_group;
@@ -69,8 +76,8 @@ int main(int argc, const char **argv)
 	/* Create a new container */
 	dev_vfio_info.container = open(VFIO_CONTAINER_PATH, O_RDWR);
 
-	if (check_vfio_version(&dev_vfio_info)
-		|| check_iommu_extension(&dev_vfio_info)) {
+	if (check_vfio_version(&dev_vfio_info) ||
+	    check_iommu_extension(&dev_vfio_info)) {
 		printf("IOMMU Type1 not supported or unknown API\n");
 
 		goto error;
@@ -87,8 +94,8 @@ int main(int argc, const char **argv)
 		goto error;
 	}
 
-	if (set_group_to_container(&dev_vfio_info)
-			|| set_iommu_type(&dev_vfio_info)) {
+	if (set_group_to_container(&dev_vfio_info) ||
+	    set_iommu_type(&dev_vfio_info)) {
 		printf("something went wrong\n");
 
 		goto error;
@@ -96,7 +103,7 @@ int main(int argc, const char **argv)
 
 	/* try to map 1MB of memory to the device */
 	printf("dma-mapping some memory to the device\n");
-	if (dma_do_map(&dev_vfio_info, &dma_map, 0, 1024*1024)) {
+	if (dma_do_map(&dev_vfio_info, &dma_map, 0, 1024 * 1024)) {
 		printf("error while dma-mapping\n");
 	} else {
 		printf("dma-map successful\n");
@@ -104,7 +111,8 @@ int main(int argc, const char **argv)
 	}
 
 	/* Get a file descriptor for the device */
-	dev.device_fd = ioctl(dev_vfio_info.group, VFIO_GROUP_GET_DEVICE_FD, dev.name);
+	dev.device_fd =
+		ioctl(dev_vfio_info.group, VFIO_GROUP_GET_DEVICE_FD, dev.name);
 	if (dev.device_fd < 0) {
 		printf("unable to get device fd\n");
 
@@ -120,27 +128,22 @@ int main(int argc, const char **argv)
 		struct vfio_region_info *reg = &dev.regions[i];
 		uint32_t *mem;
 
+		if (!reg->size)
+			continue;
 		printf("    region #%d:\n", reg->index);
-		printf("        size: %llu\n", reg->size);
+		printf("        size: %llx\n", reg->size);
 		printf("        offset: 0x%llx\n", reg->offset);
-		printf("        flags: 0x%llx\n", reg->offset);
+		printf("        flags: 0x%x\n", reg->flags);
 
 		mem = (uint32_t *)mmap(NULL, reg->size, PROT_READ | PROT_WRITE,
-					      MAP_SHARED, dev.device_fd, reg->offset);
+				       MAP_SHARED, dev.device_fd, reg->offset);
 
-		if (mem != MAP_FAILED) {
-			printf("        Successful MMAP to address %p\n", mem);
+		if (mem == MAP_FAILED) {
+			perror("mmap failed");
+			continue;
 		}
 
-		/* test if is an AMBA device and compat string matches */
-		if (vfio_is_amba_device(mem, reg->size)
-		   ^ !g_strcmp0(dev.bus, AMBA_NAME)) {
-			printf(
-	"        *** The device seems to be an AMBA device, but it's not ***\n"
-	"        ***          attached to an AMBA bus (or viceversa)     ***\n");
-		}
-
-		/* unmap */
+		printf("        Successful MMAP to address %p\n", mem);
 		if (munmap(mem, reg->size)) {
 			printf("error while unmapping region %d\n", i);
 		}
@@ -168,21 +171,22 @@ int main(int argc, const char **argv)
 
 			if (vfio_irqfd_init(dev.device_fd, irq->index, irqfd)) {
 				printf("error while settion IRQ num.%d\n",
-							      irq->index);
+				       irq->index);
 
 				goto error;
 			}
 
 			ret = read(irqfd, &e, sizeof(e));
 			if (ret != -1 || errno != EAGAIN) {
-				printf("IRQ %d shouldn't trigger yet.\n", irq->index);
+				printf("IRQ %d shouldn't trigger yet.\n",
+				       irq->index);
 
 				goto error;
 			}
 
 			if (vfio_irqfd_clean(dev.device_fd, irq->index)) {
 				printf("error while cleaning IRQ num.%d\n",
-								irq->index);
+				       irq->index);
 
 				exit(1);
 			}

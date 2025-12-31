@@ -5,6 +5,12 @@
  */
 #include "vfio_utils.h"
 
+#include <sys/fcntl.h> 
+#include <sys/stat.h>
+#include <sys/ioctl.h>      
+#include <unistd.h>     
+#include <stdio.h>
+#include <stdlib.h>
 int vfio_irqfd_clean(int device, unsigned int index)
 {
 	struct vfio_irq_set irq_set = {
