@@ -66,7 +66,7 @@ Num irqs: 5
 ```
 
 ## 需要看看的代码细节
-1. VFIO_GROUP_FLAGS_VIABLE
+1. VFIO_GROUP_FLAGS_VIABLE 是什么意思
 
 ## 优化
 这个可以自动获取?
@@ -90,9 +90,49 @@ VFIO_GROUP_SET_CONTAINER
 	}
 ```
 
-```txt
+```c
 int set_group_to_container(struct vfio_info *info)
 {
 	return ioctl(info->group, VFIO_GROUP_SET_CONTAINER, &info->container);
 }
+```
+
+## 测试 noiommu 的功能
+
+虚拟机中使用 virtio-blk 来测试:
+```txt
+🧀  sudo ./a.out
+[sudo] password for martins3: 
+
+=== Regions of device 0000:00:03.0 ===
+
+Region 0:
+  size   : 0x80
+  offset : 0x0
+  flags  : 0x3
+    - READ
+    - WRITE
+
+Region 1:
+  size   : 0x1000
+  offset : 0x10000000000
+  flags  : 0xf
+    - READ
+    - WRITE
+    - MMAP capable
+
+Region 4:
+  size   : 0x4000
+  offset : 0x40000000000
+  flags  : 0x7
+    - READ
+    - WRITE
+    - MMAP capable
+
+Region 7:
+  size   : 0x100
+  offset : 0x70000000000
+  flags  : 0x3
+    - READ
+    - WRITE
 ```

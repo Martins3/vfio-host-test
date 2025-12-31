@@ -5,3 +5,4 @@ src_test/vfio_device_test.o
 src_test/vfio_utils.o
 compile_commands.json
 src_test/.gdb_history
+*.out
