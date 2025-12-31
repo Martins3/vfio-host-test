@@ -60,6 +60,11 @@ Num irqs: 5
 3. Num irq 和队列数量对应的吗?
 4. Num regions 就是 BAR 的数量吗?
 
+失败的原因是由于 option rom 吗?
+```txt
+[52809.925646] vfio-pci 0000:02:00.0: Invalid PCI ROM header signature: expecting 0xaa55, got 0xffff
+```
+
 ## 需要看看的代码细节
 1. VFIO_GROUP_FLAGS_VIABLE
 
