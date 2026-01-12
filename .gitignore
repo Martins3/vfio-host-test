@@ -1,8 +1,6 @@
 .ccls-cache
 .direnv
-src_test/vfio_dev_test
-src_test/vfio_device_test.o
-src_test/vfio_utils.o
+*.o
 compile_commands.json
 src_test/.gdb_history
 *.out

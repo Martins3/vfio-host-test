@@ -10,10 +10,16 @@ GLIBS = `pkg-config --libs glib-2.0`
 DEPS = vfio_utils.h
 OBJ = vfio_utils.o vfio_device_test.o
 
+all: vfio_dev_test.out noiommu.out
+
 %.o: %.c $(DEPS)
 	$(CC) -c $(GFLAGS) -o $@ $< $(CFLAGS)
 
-vfio_dev_test: $(OBJ)
+
+vfio_dev_test.out: $(OBJ)
+	$(CC) $(GFLAGS) -o $@ $^ $(CFLAGS) $(GLIBS)
+
+noiommu.out: vfio_utils.o noiommu.o
 	$(CC) $(GFLAGS) -o $@ $^ $(CFLAGS) $(GLIBS)
 
 clean:
